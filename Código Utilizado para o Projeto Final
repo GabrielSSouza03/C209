@@ -1,0 +1,58 @@
+
+import moviepy.editor as mpe
+import numpy as np
+from scipy.io import wavfile
+import sounddevice as sd
+import matplotlib.pyplot as plt
+from scipy import signal
+import moviepy.video.fx.all as vfx
+from moviepy.audio.fx.all import audio_fadeout
+
+video = mpe.VideoFileClip("videoOriginal.mp4")
+audio = video.audio
+audio.write_audiofile("audio.wav")
+video.ipython_display(width=480, maxduration=180)
+
+# Duração para os intervalos
+interval_duration = 20  # segundos
+
+# Inversão da imagem a cada 20 segundos
+flipped_clips = []
+for start in range(0, int(video.duration), interval_duration):
+    end = min(start + interval_duration, video.duration)
+    clip = video.subclip(start, end)
+    if start // interval_duration % 2 == 1:  # Se o intervalo é ímpar, inverte a imagem
+        clip = vfx.mirror_x(clip)
+    flipped_clips.append(clip)
+
+flipped_video = mpe.concatenate_videoclips(flipped_clips)
+
+# Salvando o vídeo processado em um novo arquivo
+output_file = "video_invertido.mp4"
+flipped_video.write_videofile(output_file)
+
+flipped_video.ipython_display(width=480, maxduration=180)
+
+# Diminuir o som de forma linear no vídeo processado, cobrindo toda a duração do vídeo
+fade_duration = flipped_video.duration  # segundos
+# Efeito de fadeout no áudio do vídeo
+muted = flipped_video.set_audio(flipped_video.audio.fx(audio_fadeout, fade_duration))
+
+# Salvando o vídeo processado com o áudio modificado em um novo arquivo
+output_file = "video_volume.mp4"
+muted.write_videofile(output_file)
+
+muted.ipython_display(width=480, maxduration=180)
+
+
+cut_start = 60  # segundos
+cut_end = 80  # segundos
+
+first_part = muted.subclip(0, cut_start)
+cut_part = muted.subclip(cut_start, cut_end)
+remaining_part = muted.subclip(cut_end)
+final_video = mpe.concatenate_videoclips([first_part, remaining_part, cut_part])
+
+final_video.write_videofile("video_final.mp4")
+
+final_video.ipython_display(width=480, maxduration=180)
